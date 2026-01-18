@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    .container {
+        max-width: 1100px;
+        margin: 30px auto;
+        padding: 20px;
+    }
+
+    /* ===== BOOK APPOINTMENT ===== */
+    .appointment-form {
+        background: white;
+        width:500px;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+        margin-left:250px;
+        
+    }
+
+    .appointment-form h2 {
+        margin-bottom: 20px;
+        text-align:center;
+        color: #1e3c72;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 6px;
+    }
+
+    select, input, textarea, button {
+        width: 100%;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+    }
+
+    textarea {
+        resize: none;
+    }
+
+    button {
+        background: #2a5298;
+        color: white;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        margin-top: 10px;
+        width:40%;
+        margin-left:120px;
+    }
+
+    button:hover {
+        background: #1e3c72;
+    }
+
+    /* ===== APPOINTMENT TABLE ===== */
+    .appointment-table {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+    }
+
+    th {
+        background: #2a5298;
+        color: white;
+    }
+
+    .status {
+        padding: 5px 12px;
+        border-radius: 20px;
+        color: white;
+        font-size: 13px;
+        font-weight: bold;
+    }
+
+    .pending { background: orange; }
+    .approved { background: green; }
+    .rejected { background: red; }
+</style>
+
+<div class="container">
+
+    <!-- ===== BOOK APPOINTMENT ===== -->
+    <div class="appointment-form">
+        <h2>Book Appointment</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label>Select Doctor</label>
+                <select name="doctor" required>
+                    <option value="">-- Choose Doctor --</option>
+                    {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}">
+                            Dr. {{ doctor.name }} ({{ doctor.specialization }})->{{doctor.hospital.name}}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Appointment Date</label>
+                <input type="date" name="appointment_date" required>
+            </div>
+
+            <div class="form-group">
+                <label>Reason</label>
+                <textarea name="reason" rows="3" placeholder="Describe your problem" required></textarea>
+            </div>
+
+            <button type="submit">Book Appointment</button>
+        </form>
+    </div>
+
+    <!-- ===== MY APPOINTMENTS ===== -->
+    <div class="appointment-table">
+        <h2 style="margin-bottom:15px;color:#1e3c72;">My Appointments</h2>
+
+        <table>
+            <tr>
+                <th>Doctor</th>
+                <th>Date</th>
+                <th>Reason</th>
+                <th>Status</th>
+            </tr>
+
+            {% for appointment in appointments %}
+            <tr>
+                <td>Dr. {{ appointment.doctor.name }}</td>
+                <td>{{ appointment.appointment_date }}</td>
+                <td>{{ appointment.reason }}</td>
+                <td>
+                    <span class="status {{ appointment.status|lower }}">
+                        {{ appointment.status }}
+                    </span>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No appointments booked yet</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

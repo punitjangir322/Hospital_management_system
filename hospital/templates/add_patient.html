@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<style>
+.form-box{
+    width:480px;
+    margin:40px auto;
+    padding:30px;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 8px 25px rgba(0,0,0,.15);
+}
+
+.form-box h2{
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.form-group{
+    margin-bottom:15px;
+}
+
+.form-group label{
+    display:block;
+    font-weight:600;
+    margin-bottom:6px;
+}
+
+input, select, textarea{
+    width:100%;
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:6px;
+    font-size:14px;
+}
+
+textarea{
+    resize:none;
+    height:70px;
+}
+
+.gender-group{
+    display:flex;
+    gap:20px;
+    align-items:center;
+}
+
+.gender-group label{
+    font-weight:500;
+    cursor:pointer;
+}
+
+.button-group{
+    display:flex;
+    gap:15px;
+    margin-top:20px;
+}
+
+.btn-submit{
+    flex:1;
+    padding:12px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.btn-submit:hover{
+    background:#1e40af;
+}
+
+.btn-back{
+    flex:1;
+    padding:12px;
+    background:#6b7280;
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.btn-back:hover{
+    background:#4b5563;
+}
+</style>
+
+<div class="form-box">
+    <h2>Add Patient</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Patient Name</label>
+            <input type="text" name="name" placeholder="Enter patient name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Age</label>
+            <input type="number" name="age" placeholder="Enter age" required>
+        </div>
+
+        <div class="form-group">
+            <label>Gender</label>
+            <div class="gender-group">
+                <label><input type="radio" name="gender" value="Male" required> Male</label>
+                <label><input type="radio" name="gender" value="Female"> Female</label>
+                <label><input type="radio" name="gender" value="Other"> Other</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Mobile Number</label>
+            <input type="text" name="mobile" placeholder="Enter mobile number" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="*******" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" placeholder="abc12@gmail.com" required>
+        </div>
+
+        <div class="form-group">
+            <label>Address</label>
+            <textarea name="address" placeholder="Enter address" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Disease</label>
+            <input type="text" name="disease" placeholder="Enter disease" required>
+        </div>
+
+        <div class="form-group">
+            <label>Admitted Status </label>
+            <input type="text" name="ward_no" placeholder="Enter ward number" required>
+        </div>
+
+        <div class="form-group">
+            <label>Assign Doctor</label>
+            <select name="doctor">
+                <option value="">Select Doctor (Optional)</option>
+                {% for doctor in doctors %}
+                    <option value="{{ doctor.id }}">
+                        {{ doctor.name }} ({{ doctor.specialization }})
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- BUTTONS -->
+        <div class="button-group">
+            <button type="button" class="btn-back" onclick="history.back()">← Back</button>
+            <button type="submit" class="btn-submit">Add Patient</button>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

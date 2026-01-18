@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Prescriptions{% endblock %}
+
+{% block content %}
+
+<!-- Font Awesome -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
+
+<style>
+.container {
+    background: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-bottom: 25px;
+    color: #1e3c72;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background: #2c3e50;
+    color: #fff;
+}
+
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px;
+    border-radius: 5px;
+    color: #fff;
+    text-decoration: none;
+    margin: 0 5px;
+    font-size: 15px;
+}
+
+.pdf-btn {
+    background: #e74c3c;
+}
+
+.mail-btn {
+    background: #3498db;
+}
+
+.action-btn:hover {
+    opacity: 0.85;
+}
+</style>
+
+<div class="container">
+    <h2>Prescription List</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Patient Name</th>
+                <th>Disease</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        {% for prescription in prescriptions %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ prescription.patient.name }}</td>
+                <td>{{ prescription.reason }}</td>
+                <td>{{ prescription.created_at|date:"d M Y" }}</td>
+                <td>
+
+                    <!-- Download PDF -->
+                    <a href="{% url 'download-prescription' prescription.id %}"
+                    class="action-btn pdf-btn"
+                    title="Download PDF">
+                        <i class="fa-solid fa-file-pdf"></i>
+                    </a>
+
+                    <!-- Send to Gmail -->
+                    <a href="{% url 'send-prescription' prescription.id %}"
+                    class="action-btn mail-btn"
+                    title="Send to Email">
+                        <i class="fa-solid fa-envelope"></i>
+                    </a>
+
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No prescriptions found</td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

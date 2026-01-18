@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Generate Prescription{% endblock %}
+
+{% block content %}
+
+<style>
+/* ===== Layout ===== */
+.prescription-container {
+    max-width: 1100px;
+    margin: 30px auto;
+    background: #ffffff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+    font-family: "Segoe UI", sans-serif;
+}
+
+.prescription-container h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #2c3e50;
+}
+
+/* ===== Info Cards ===== */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-card {
+    background: #f6f8fa;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.info-card span {
+    display: block;
+    font-size: 12px;
+    color: #7f8c8d;
+}
+
+.info-card strong {
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+/* ===== Table ===== */
+.prescription-table {
+    width: 100%;
+    border-collapse:inherit;
+    margin-top: 15px;
+}
+
+.prescription-table th {
+    background: #3498db;
+    color: white;
+    padding: 10px;
+    font-size: 14px;
+}
+
+.prescription-table td {
+    border: 1px solid #e0e0e0;
+    padding: 8px;
+}
+
+.prescription-table input,
+.prescription-table textarea {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+}
+
+.prescription-table textarea {
+    resize: none;
+    height: 38px;
+}
+
+/* ===== Buttons ===== */
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+.generate-btn {
+    background: #2ecc71;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 15px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.generate-btn:hover {
+    background: #27ae60;
+}
+
+.back-btn {
+    background: #bdc3c7;
+    color: #2c3e50;
+    border: none;
+    padding: 12px 30px;
+    font-size: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.back-btn:hover {
+    background: #95a5a6;
+}
+</style>
+
+<div class="prescription-container">
+
+    <h2>🩺 Generate Prescription</h2>
+
+    <!-- Patient / Doctor / Hospital Info -->
+    <div class="info-grid">
+        <div class="info-card">
+            <span>Hospital</span>
+            <strong>{{ hospital.name }}</strong>
+        </div>
+        <div class="info-card">
+            <span>Patient Name</span>
+            <strong>{{ patient.name }}</strong>
+        </div>
+        <div class="info-card">
+            <span>Age</span>
+            <strong>{{ patient.age }}</strong>
+        </div>
+        <div class="info-card">
+            <span>Gender</span>
+            <strong>{{ patient.gender }}</strong>
+        </div>
+        <div class="info-card">
+            <span>Mobile</span>
+            <strong>{{ patient.mobile }}</strong>
+        </div>
+        <div class="info-card">
+            <span>Doctor</span>
+            <strong>{{ doctor.name }}</strong>
+        </div>
+        
+    </div>
+
+    <!-- Prescription Form -->
+    <form method="POST">
+        {% csrf_token %}
+
+        <table class="prescription-table">
+            <thead>
+                <tr>
+                    <th style="width:5%">S no</th>
+                    <th style="width:35%">Medicine / Injection</th>
+                    <th style="width:15%">Quantity</th>
+                    <th style="width:45%">Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in "1234567890" %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <input type="text" name="medicine_name[]" placeholder="Medicine name">
+                    </td>
+                    <td>
+                        <input type="number" name="quantity[]" placeholder="Qty">
+                    </td>
+                    <td>
+                        <textarea name="description[]" placeholder="Dosage / Notes"></textarea>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="button-row">
+            <button type="button" class="back-btn" onclick="window.history.back();">
+                ← Back
+            </button>
+
+            <button type="submit" class="generate-btn">
+                Generate PDF
+            </button>
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Management System</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body {
+            background: #f4f6f9;
+        }
+
+        /* ===== HEADER ===== */
+        header {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .welcome {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            background-color:white;
+            color: #2a5298;
+            padding: 8px 18px;
+            border-radius: 5px;
+            font-weight: bold;
+            
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn:hover {
+            background: white;
+            color: #1e723a;
+        } 
+
+        /* ===== DROPDOWN ===== */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 1000;
+        }
+        .btn{
+            background:white;
+        }
+
+        .dropdown-content a {
+            display: block;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: linear-gradient(135deg, #1e3c72, #2a5298);
+            font-weight: bold;
+        }
+
+        .dropdown-content a:hover {
+            background: #f1f5f9;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        .btn1{
+            background-color:white;
+            color:blue;
+            padding:8px;
+            border:2px;
+            border-radius:5px;
+            text-decoration:none;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Hospital Management System</h1>
+
+    <div class="right">
+
+        {# ===== SUPER ADMIN ===== #}
+        {% if request.session.super_admin %}
+            <span class="welcome">Hi Super Admin</span>
+            <a href="{% url 'sa_logout' %}" class="btn1">Logout</a>
+
+        {# ===== HOSPITAL ===== #}
+        {% elif request.session.hospital_id %}
+            <span class="welcome">Hospital Dashboard</span>
+            <a href="{% url 'hospital_logout' %}" class="btn1">Logout</a>
+
+        {# ===== DOCTOR ===== #}
+        {% elif request.session.doctor_id %}
+            <span class="welcome">Dr. {{ request.session.doctor_name }}</span>
+            <a href="{% url 'sa_logout' %}" class="btn1">Logout</a>
+
+        {# ===== PATIENT ===== #}
+        {% elif request.session.patient_id %}
+            <span class="welcome">Hi,{{ request.session.patient_name }}</span>
+            <a href="{% url 'sa_logout' %}" class="btn1">Logout</a>
+
+        {# ===== NOT LOGGED IN ===== #}
+        {% else %}
+            <div class="dropdown">
+                <button class="btn">Login</button>
+                <div class="dropdown-content">
+                    <a href="{% url 'super_admin_login' %}">Super Admin Login</a>
+                    <a href="{% url 'hospital_login_page' %}">Hospital Login</a>
+                    <a href="{% url 'doctor_login_page' %}">Doctor Login</a>
+                    <a href="{% url 'patient_login_page' %}">Patient Login</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</header>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>
