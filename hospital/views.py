@@ -179,7 +179,7 @@ def hospital_dashboard(request):
 
     patients = Patient.objects.filter(
         hospital=hospital
-    ).order_by('-admitted_on')
+    ).order_by('-id')
 
     doctors = Doctor.objects.filter(hospital=hospital)
 
@@ -536,12 +536,11 @@ def edit_patient(request, patient_id):
         doctor_id = request.POST.get('doctor')
         address = request.POST.get('address')
         mobile = request.POST.get('mobile')
-        disease = request.POST.get('disease')
-        ward_no = request.POST.get('ward_no')
+        
         email=request.POST.get('email')
 
         # ---- Validation ----
-        if not all([name, age, mobile, disease, ward_no]):
+        if not all([name, age, mobile]):
             return render(request, 'edit_patient.html', {
                 'patient': patient,
                 'user': user,
@@ -564,8 +563,7 @@ def edit_patient(request, patient_id):
         patient.doctor_id = doctor_id
         patient.address = address
         
-        patient.disease = disease
-        patient.ward_no = ward_no
+        
         email=email
         patient.save()
 
@@ -1130,4 +1128,18 @@ def visiting_history(request,patient_id):
         'meetings':meeting,
         'patient':patient
         
+    })
+    
+def all_appointment(request,doctor_id):
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = Hospital.objects.get(id=hospital_id)
+    doctor=get_object_or_404(Doctor,id=doctor_id)
+    appointment=Appointment.objects.filter(doctor=doctor, status='Approved'
+    ).select_related('patient').order_by('-created_at')
+    return render(request,'doctor_appointment.html',{
+        'appointments':appointment,
+        'doctor':doctor
     })
