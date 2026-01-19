@@ -195,5 +195,16 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.patient.name} - {self.payment_date}"
 
-    
+class AdmitPatient(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE)
+    doctor = models.ForeignKey(Doctor, on_delete=models.CASCADE)
+    hospital = models.ForeignKey(Hospital, on_delete=models.CASCADE)
+    admit_status = models.CharField(max_length=50)
+    disease = models.TextField()
+    mobile=models.CharField(max_length=13,null=True,blank=True)
+    admitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.patient.name} - {self.admit_status}"
+
 

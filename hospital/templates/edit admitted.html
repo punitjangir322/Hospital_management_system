@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Edit Admitted Patient{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: #f2f4f7;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 10px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #2c3e50;
+    }
+
+    .patient-box {
+        background: #f7f9fb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+
+    .patient-box p {
+        margin: 6px 0;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 11px;
+        border: none;
+        border-radius: 6px;
+        font-size: 15px;
+        cursor: pointer;
+        color: white;
+        margin-top: 10px;
+    }
+
+    .btn-save {
+        background: #27ae60;
+    }
+
+    .btn-back {
+        background: #7f8c8d;
+        text-decoration: none;
+        display: block;
+        text-align: center;
+    }
+</style>
+
+<div class="container">
+
+    <h2>Edit Admit Status</h2>
+
+    <!-- Patient Info -->
+    <div class="patient-box">
+        <p><strong>Name:</strong> {{ admit.patient.name }}</p>
+        <p><strong>Age:</strong> {{ admit.patient.age }}</p>
+        <p><strong>Mobile:</strong> {{ admit.patient.mobile }}</p>
+        <p><strong>Doctor:</strong> {{ admit.doctor.name }}</p>
+        <p><strong>Disease:</strong> {{ admit.disease }}</p>
+    </div>
+
+    <!-- Edit Form -->
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="form-group">
+            <label>Admit Status</label>
+            <input
+                type="text"
+                name="admit_status"
+                value="{{ admit.admit_status }}"
+                placeholder="Admitted / Discharged"
+                required
+            >
+        </div>
+
+        <button type="submit" class="btn btn-save">
+            Update Status
+        </button>
+
+        <a href="{% url 'admitted-patient' %}" class="btn btn-back">
+            ← Back to List
+        </a>
+    </form>
+
+</div>
+
+{% endblock %}

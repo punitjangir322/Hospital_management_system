@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Admitted Patients{% endblock %}
+
+{% block content %}
+
+<style>
+    body {
+        background: #f2f4f7;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 10px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #2c3e50;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+
+    th, td {
+        padding: 12px 10px;
+        border-bottom: 1px solid #e0e0e0;
+        text-align: center;
+    }
+
+    th {
+        background: #f8fafc;
+        color: #34495e;
+        font-weight: 600;
+    }
+
+    tr:hover {
+        background: #f6f9fc;
+    }
+
+    .status {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .admitted {
+        background: #27ae60;
+    }
+
+    .discharged {
+        background: #e74c3c;
+    }
+
+    .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 5px;
+        color: white;
+        text-decoration: none;
+        margin: 2px;
+        display: inline-block;
+    }
+
+    .btn-edit {
+        background: #3498db;
+    }
+
+    .btn-payment {
+        background: #9b59b6;
+    }
+
+    .btn-test {
+        background: #f39c12;
+    }
+
+    .empty {
+        text-align: center;
+        padding: 20px;
+        color: #888;
+    }
+    .btn-back{
+        margin-left:900px;
+        text-decoration:none;
+        padding:14px 20px;
+        color:white;
+        background:grey;
+        margin-bottom:0px;
+        font-size:15px;
+    }
+</style>
+
+<div class="container">
+    <a href="{% url 'hospital_dashboard' %}" class="btn btn-back">
+            ← Back
+        </a>
+
+    <h2>Admitted Patients</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Status</th>
+                <th>Patient Name</th>
+                <th>Age</th>
+
+                <th>Disease</th>
+                <th>Doctor</th>
+                <th>Admit Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+
+        {% for admit in admits %}
+            <tr>
+                <td>
+                    <span class="status {% if admit.admit_status|lower == 'admitted' %}admitted{% else %}discharged{% endif %}">
+                        {{ admit.admit_status }}
+                    </span>
+                </td>
+
+                <td>{{ admit.patient.name }}</td>
+                <td>{{ admit.patient.age }}</td>
+                <td>{{ admit.disease }}</td>
+                <td>{{ admit.doctor.name }}</td>
+                <td>{{ admit.admitted_at|date:"d M Y" }}</td>
+
+                <td>
+                    <a href="{% url 'edit-admitted' admit.id %}" class="btn btn-edit">
+                        Edit
+                    </a>
+                    <a href="#" class="btn btn-payment">
+                        Payments
+                    </a>
+                    <a href="#" class="btn btn-test">
+                        Test Reports
+                    </a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="7" class="empty">
+                    No admitted patients found
+                </td>
+            </tr>
+        {% endfor %}
+
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

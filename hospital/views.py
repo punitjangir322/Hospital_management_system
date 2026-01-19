@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.models import User   # ✅ FIXED
-from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment,Meeting
+from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment,Meeting,AdmitPatient
 from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 from django.core.mail import send_mail
@@ -1142,4 +1142,111 @@ def all_appointment(request,doctor_id):
     return render(request,'doctor_appointment.html',{
         'appointments':appointment,
         'doctor':doctor
+    })
+
+
+
+from django.contrib import messages
+
+def admit_patient(request):
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+    patient = None
+
+    # 🔍 SEARCH PATIENT (ONLY FROM SAME HOSPITAL)
+    search = request.GET.get('search')
+    if search:
+        patient = Patient.objects.filter(
+            hospital=hospital
+        ).filter(
+            Q(name__icontains=search) |
+            Q(mobile__icontains=search)
+        ).first()
+
+        if not patient:
+            messages.error(request, "Patient not found in this hospital")
+
+    # 🏥 ADMIT PATIENT (POST)
+    if request.method == "POST":
+        patient_id = request.POST.get('patient_id')
+        admit_status = request.POST.get('admit_status')
+        disease = request.POST.get('disease')
+
+        # ✅ Validate patient belongs to same hospital
+        patient = Patient.objects.filter(
+            id=patient_id,
+            hospital=hospital
+        ).first()
+
+        if not patient:
+            messages.error(request, "Patient not found in this hospital")
+            return redirect('admit_patient')
+
+        AdmitPatient.objects.create(
+            patient=patient,
+            doctor=patient.doctor,
+            hospital=hospital,
+            admit_status=admit_status,
+            disease=disease,
+            mobile=patient.mobile
+        )
+
+        messages.success(request, "Patient admitted successfully")
+        return redirect('hospital_dashboard')
+
+    return render(request, 'admit patient.html', {
+        'patient': patient
+    })
+
+
+
+
+def admitted_patient(request):
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+
+    search = request.GET.get('search')
+
+    # ✅ Base queryset (ONLY this hospital)
+    admits = AdmitPatient.objects.select_related(
+        'patient', 'doctor'
+    ).filter(hospital=hospital)
+
+    # 🔍 Search inside admitted patients
+    if search:
+        admits = admits.filter(
+            Q(patient__name__icontains=search) |
+            Q(patient__mobile__icontains=search) |
+            Q(doctor__name__icontains=search) |
+            Q(disease__icontains=search)
+        )
+
+    return render(request, 'admitted patient.html', {
+        'admits': admits
+    })
+
+
+def edit_admitted(request,admit_id):
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+    admit=get_object_or_404(AdmitPatient,id=admit_id)
+    if request.method=='POST':
+        status=request.POST.get('admit_status')
+    
+        admit.admit_status=status
+        admit.save()
+        return redirect('admitted-patient')
+    
+    
+    return render(request,'edit admitted.html',{
+        'admit':admit
     })
