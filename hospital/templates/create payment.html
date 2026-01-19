@@ -14,6 +14,9 @@ h2{
     text-align:center;
     margin-bottom:25px;
     color:#1e3c72;
+    margin-left:260px;
+    font-size:25px;
+    font-weight:1000;
 }
 .section{
     margin-bottom:30px;
@@ -52,19 +55,43 @@ button{
     padding:12px 25px;
     border-radius:5px;
     cursor:pointer;
+    margin-left:230px;
+    width:300px;
 }
 button:hover{
     background:#1e3c72;
 }
+.heading a{
+    padding: 6px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-left:160px; 
+    text-decoration:none;
+    background-color:grey; 
+    margin-bottom:20px;
+    color:white;
+    
+}
+.heading{
+    display:flex;
+    justify-content:space-evenly;
+}
+
 </style>
 
 <div class="container">
 
-<h2>Patient Payment Entry</h2>
+<div class="heading">
+        <h2>Patient Payment Entry</h2 >
+        <a href="javascript:history.back()" class="btn back">
+                <i class="fa-solid fa-arrow-left"></i> Back
+            </a>
+    </div>
 
 <!-- ================= PATIENT DETAILS ================= -->
 <div class="section">
 <h3>Patient Details</h3>
+
 
 <div class="row">
     <div class="col">
@@ -127,7 +154,7 @@ button:hover{
 <div class="row">
     <div class="col">
         <label>Reason</label>
-        <input type="text" name="reason" placeholder="Consultation / Test / Medicine" required>
+        <input type="text" value="{{ meeting.reason }}" readonly>
     </div>
 </div>
 

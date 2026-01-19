@@ -61,11 +61,28 @@ th {
 .action-btn:hover {
     opacity: 0.85;
 }
+.heading{
+    width:100%;
+    height:50px;
+    display:flex;
+    justify-content:space-between;
+}
+.back-btn {
+    padding: 6px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-bottom:10px;
+}
+
 </style>
 
 <div class="container">
-    <h2>Prescription List</h2>
-
+    <div class="heading">
+        <h2>Prescription List</h2>
+        <button type="button" class="back-btn" onclick="window.history.back();">
+            ← Back
+        </button>
+        </div>
     <table>
         <thead>
             <tr>
@@ -82,7 +99,7 @@ th {
             <tr>
                 <td>{{ forloop.counter }}</td>
                 <td>{{ prescription.patient.name }}</td>
-                <td>{{ prescription.reason }}</td>
+                <td>{{ prescription.meeting.reason }}</td>
                 <td>{{ prescription.created_at|date:"d M Y" }}</td>
                 <td>
 

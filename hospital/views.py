@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.models import User   # ✅ FIXED
-from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment
+from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment,Meeting
 from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 from django.core.mail import send_mail
@@ -11,6 +11,8 @@ from django.core.exceptions import ValidationError
 from django.contrib import messages
 import logging
 import traceback
+from django.http import JsonResponse
+from django.db.models import Q
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from reportlab.pdfgen import canvas
@@ -250,8 +252,8 @@ def add_patient(request):
         name = request.POST.get('name')
         age = request.POST.get('age')
         gender = request.POST.get('gender')
-        disease = request.POST.get('disease')
-        ward_no = request.POST.get('ward_no')
+        
+        
         address = request.POST.get('address')
         mobile = request.POST.get('mobile')
         password = request.POST.get('password')
@@ -277,8 +279,7 @@ def add_patient(request):
                 name=name,
                 age=age,
                 gender=gender,
-                disease=disease,
-                ward_no=ward_no,
+                
                 address=address,
                 doctor_id=doctor_id,
                 admin=user,
@@ -605,9 +606,8 @@ def add_patient_by_doctor(request):
             mobile = request.POST['mobile']
             password = request.POST['password']
             email = request.POST['email']
-            address = request.POST['address']
-            disease = request.POST['disease']
-            ward_no = request.POST['ward_no']
+            address=request.POST['address']
+            
 
             
             user = User.objects.create_user(
@@ -627,9 +627,8 @@ def add_patient_by_doctor(request):
                 gender=gender,
                 mobile=mobile,
                 email=email,
-                address=address,
-                disease=disease,
-                ward_no=ward_no
+                address=address
+                
             )
             
 
@@ -669,42 +668,64 @@ Thank you
 
     return render(request, 'add-patient.html')
 
+
+
+
 def manage_patient(request):
-    doctor_id = request.session.get('doctor_id')
-    
+        
+        doctor_id = request.session.get('doctor_id')
+        if not doctor_id:
+            return redirect('doctor_login_page')
 
+        doctor = get_object_or_404(Doctor, id=doctor_id)
+
+        search = request.GET.get('search', '').strip()
+
+        patients = Patient.objects.filter(
+            doctor=doctor
+        ).select_related('admin').order_by('-id')
+
+        if search:
+            patients = patients.filter(
+                Q(name__icontains=search) |
+                Q(admin__username__icontains=search)
+            )
+
+        patients = patients.order_by('name')
+
+        
+
+        # ✅ Normal page load
+        return render(
+            request,
+            'manage_patient.html',
+            {
+                'patients': patients,
+                'search': search
+            }
+        )
+
+
+
+
+
+
+def generate_prescription(request, meeting_id):
+
+    doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return redirect('doctor_login_page')
 
     doctor = get_object_or_404(Doctor, id=doctor_id)
-    patients = Patient.objects.filter(doctor=doctor)
-    print(patients)
-    return render(request,'manage_patient.html',{'patients':patients})
+    meeting = get_object_or_404(Meeting, id=meeting_id)
 
-
-
-
-
-
-
-
-def generate_prescription(request, patient_id):
-
-    doctor_id = request.session.get('doctor_id')
-    if not doctor_id:
-        return redirect('doctor_login_page')
-
-    doctor = get_object_or_404(Doctor, id=doctor_id)
-    patient = get_object_or_404(Patient, id=patient_id)
     hospital = doctor.hospital
+    patient = meeting.patient
 
     if request.method == "POST":
         medicine_names = request.POST.getlist('medicine_name[]')
         quantities = request.POST.getlist('quantity[]')
         descriptions = request.POST.getlist('description[]')
-        
-
-        
 
         prescriptions = []
 
@@ -715,20 +736,36 @@ def generate_prescription(request, patient_id):
                         hospital=hospital,
                         doctor=doctor,
                         patient=patient,
+                        meeting=meeting,   # ✅ LINK TO MEETING
                         medicine_name=name,
                         quantity=int(qty),
-                        description=desc,
-                        
+                        description=desc
                     )
                 )
 
+        # 📄 Generate PDF
         pdf_bytes = generate_prescription_pdf(
-            hospital, doctor, patient, prescriptions
+            hospital=hospital,
+            doctor=doctor,
+            patient=patient,
+            prescriptions=prescriptions,
+            meeting=meeting
         )
 
+        # 📧 Send Email
         email = EmailMessage(
             subject="Your Medical Prescription",
-            body=f"Hello {patient.name},\n\nPlease find your prescription attached.",
+            body=f"""
+Hello {patient.name},
+
+Please find your prescription attached.
+
+Doctor: Dr. {doctor.name}
+Disease: {meeting.reason}
+
+Regards,
+{hospital.name}
+""",
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[patient.email],
         )
@@ -738,8 +775,9 @@ def generate_prescription(request, patient_id):
             pdf_bytes,
             "application/pdf"
         )
-        email.send()
+        email.send(fail_silently=False)
 
+        # ⬇️ Download PDF
         response = HttpResponse(pdf_bytes, content_type='application/pdf')
         response['Content-Disposition'] = (
             f'attachment; filename="Prescription_{patient.name}.pdf"'
@@ -749,14 +787,13 @@ def generate_prescription(request, patient_id):
     return render(request, "generate_prescription.html", {
         'patient': patient,
         'doctor': doctor,
-        'hospital': hospital
+        'hospital': hospital,
+        'meeting': meeting
     })
 
-        
-def generate_prescription_pdf(hospital, doctor, patient, prescriptions):
+def generate_prescription_pdf(hospital, doctor, patient, prescriptions, meeting):
 
-    buffer = BytesIO()   # ✅ MEMORY BUFFER
-
+    buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
@@ -796,7 +833,7 @@ def generate_prescription_pdf(hospital, doctor, patient, prescriptions):
     p.drawString(40, y, f"Referred Doctor: Dr. {doctor.name}")
 
     y -= 18
-    p.drawString(40, y, f"Disease / Diagnosis: {patient.disease}")
+    p.drawString(40, y, f"Disease / Diagnosis: {meeting.reason}")  # ✅ FIXED
 
     # ================= PRESCRIPTION TABLE =================
     y -= 40
@@ -839,39 +876,57 @@ def generate_prescription_pdf(hospital, doctor, patient, prescriptions):
     p.save()
 
     buffer.seek(0)
-
-    # ✅ RETURN RAW PDF BYTES (CRITICAL)
-    return buffer.read()
+    return buffer.read()  # ✅ FIXED SYNTAX
 
 
-def manage_payment_by_doctor(request,patient_id):
+
+
+
+def manage_payment_by_doctor(request, meeting_id):
+    # 🔐 Doctor session check
     doctor_id = request.session.get('doctor_id')
     if not doctor_id:
         return redirect('doctor_login_page')
 
     doctor = get_object_or_404(Doctor, id=doctor_id)
-    patient = get_object_or_404(Patient, id=patient_id)
-    hospital = doctor.hospital 
-    if request.method=='POST':
-        total=request.POST.get('total_amount')
-        date=request.POST.get('payment_date')
-        amount=request.POST.get('paid_amount')
-        method=request.POST.get('payment_method')
-        reason=request.POST.get('reason')
-        remaining=int(total)-int(amount)
+    meeting = get_object_or_404(Meeting, id=meeting_id)
+
+    patient = meeting.patient
+    hospital = doctor.hospital
+
+    if request.method == 'POST':
+        total = int(request.POST.get('total_amount'))
+        paid = int(request.POST.get('paid_amount'))
+        date = request.POST.get('payment_date')
+        method = request.POST.get('payment_method')
+
+        # ✅ Reason always from meeting
+        reason = meeting.reason
+
+        # ✅ Prevent negative remaining
+        remaining = max(total - paid, 0)
+
         Payment.objects.create(
+            hospital=hospital,
+            doctor=doctor,
             patient=patient,
+            meeting=meeting,
             total_payment=total,
-            paid_payment=amount,
+            paid_payment=paid,
             remaining_payment=remaining,
             reason=reason,
             payment_method=method,
             payment_date=date
         )
-        return redirect('manage-patient')
-    return render(request,'create payment.html',{
-        'patient':patient
+
+        return redirect('visiting-history', patient.id)
+
+    return render(request, 'create payment.html', {   # ✅ FIXED
+        'patient': patient,
+        'meeting': meeting
     })
+
+
     
 def payment_history(request,patient_id):
     doctor_id = request.session.get('doctor_id')
@@ -937,9 +992,11 @@ def all_prescription(request,patient_id):
         return redirect('doctor_login_page')
 
     patient=get_object_or_404(Patient,id=patient_id)
+    meeting=Meeting.objects.filter(patient=patient)
     prescription=Prescription.objects.filter(patient=patient)
     return render(request,'all prescriptions.html',{
-        'prescriptions':prescription
+        'prescriptions':prescription,
+        'meeting':meeting
         
     })
 
@@ -975,57 +1032,102 @@ def send_prescription(request, prescription_id):
 
     prescription = get_object_or_404(Prescription, id=prescription_id)
 
+    # ✅ Safety check
+    if not prescription.meeting:
+        messages.error(request, "Prescription is not linked to any visit")
+        return redirect('all-prescription', prescription.patient.id)
+
     patient = prescription.patient
     doctor = prescription.doctor
     hospital = prescription.hospital
-    disease=patient.disease
+    meeting = prescription.meeting
 
-    # patient registered email (adjust field if needed)
-    patient_email = patient.email 
-
+    patient_email = patient.email
     if not patient_email:
         messages.error(request, "Patient email not found")
         return redirect('all-prescription', patient.id)
 
-    # get all prescriptions of same visit
+    # ✅ Get all prescriptions of SAME MEETING
     prescriptions = Prescription.objects.filter(
-        patient=patient,
-        doctor=doctor,
-        created_at__date=prescription.created_at.date()
-    )
+        meeting=meeting
+    ).order_by('id')
 
-    # ✅ generate raw pdf bytes
+    # ✅ Generate PDF bytes (PASS MEETING)
     pdf_bytes = generate_prescription_pdf(
         hospital=hospital,
         doctor=doctor,
         patient=patient,
-        prescriptions=prescriptions
+        prescriptions=prescriptions,
+        meeting=meeting
     )
 
-    # ✅ create email
+    # ✅ Create Email
     email = EmailMessage(
         subject=f"Prescription from {hospital.name}",
         body=(
             f"Dear {patient.name},\n\n"
             f"Please find attached your prescription.\n\n"
             f"Doctor: Dr. {doctor.name}\n"
+            f"Disease: {meeting.reason}\n"
             f"Hospital: {hospital.name}\n\n"
             f"Get well soon."
         ),
-        from_email=settings.EMAIL_HOST_USER,
+        from_email=settings.DEFAULT_FROM_EMAIL,
         to=[patient_email],
     )
 
-    # ✅ attach pdf (CRITICAL PART)
+    # ✅ Attach PDF
     email.attach(
         filename=f"Prescription_{patient.name}.pdf",
         content=pdf_bytes,
         mimetype="application/pdf"
     )
 
-    # ✅ send mail
+    # ✅ Send Email
     email.send(fail_silently=False)
 
     messages.success(request, "Prescription sent to patient email successfully")
 
     return redirect('all-prescription', patient.id)
+
+def create_meeting(request,patient_id):
+    doctor_id = request.session.get('doctor_id')
+    if not doctor_id:
+        return redirect('doctor_login_page')
+    patient=get_object_or_404(Patient,id=patient_id)
+    doctor=get_object_or_404(Doctor,id=doctor_id)
+    hospital=doctor.hospital
+    if request.method=='POST':
+        date=request.POST.get('meeting_date')
+        reason=request.POST.get('reason')
+        desc=request.POST.get('description')
+        
+        Meeting.objects.create(
+            hospital=hospital,
+            doctor=doctor,
+            patient=patient,
+            meeting_date=date,
+            reason=reason,
+            description=desc
+        )
+        return redirect('manage-patient')
+    
+    return render(request,'create_meeting.html',{
+        'patient':patient
+    })
+    
+def visiting_history(request,patient_id):
+    doctor_id = request.session.get('doctor_id')
+    if not doctor_id:
+        return redirect('doctor_login_page')
+    patient=get_object_or_404(Patient,id=patient_id)
+    doctor=get_object_or_404(Doctor,id=doctor_id)
+    hospital=doctor.hospital
+    meeting=Meeting.objects.filter(patient=patient)
+    
+        
+    return render(request,'visiting_history.html',{
+        'meetings':meeting,
+        'patient':patient
+        
+    })

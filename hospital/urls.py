@@ -24,12 +24,12 @@ urlpatterns = [
     path('doctor/dashboard/add-patient', views.add_patient_by_doctor, name='add-patient'),
     path('doctor/dashboard/manage-patient', views.manage_patient, name='manage-patient'),
     path(
-    'doctor/dashboard/manage-patient/prescription/<int:patient_id>/',
+    'doctor/dashboard/manage-patient/prescription/<int:meeting_id>/',
     views.generate_prescription,
     name='generate-prescription'
-),
+), 
     path(
-    'doctor/dashboard/manage-patient/manage-payment/<int:patient_id>/',
+    'doctor/dashboard/manage-patient/manage-payment/visiting-history/<int:meeting_id>/',
     views.manage_payment_by_doctor,
     name='manage-payment'
 ),
@@ -57,6 +57,16 @@ urlpatterns = [
     views.send_prescription,
     name='send-prescription'),
     
+    path(
+    'doctor/dashboard/manage-patient/create-meeting/<int:patient_id>/',
+    views.create_meeting,
+    name='create-meeting'
+),
     
+    path(
+    'doctor/dashboard/manage-patient/visiting-history/<int:patient_id>/',
+    views.visiting_history,
+    name='visiting-history'
+),
 
 ]

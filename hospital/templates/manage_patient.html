@@ -1,19 +1,27 @@
 {% extends "base.html" %}
-{% block title %}Create Patients{% endblock %}
-
+{% block title %}My Patients{% endblock %}
 {% block content %}
-
-<!-- Font Awesome -->
-<link
-  rel="stylesheet"
-  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
-/>
 
 <style>
 .table-box {
     background: #fff;
     padding: 20px;
     border-radius: 8px;
+}
+
+.heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.search-input {
+    padding: 8px 14px;
+    width: 260px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    font-size: 14px;
 }
 
 table {
@@ -33,69 +41,54 @@ th {
 }
 
 .btn {
-    padding: 7px 12px;
+    padding: 7px 14px;
     background: #3498db;
     color: white;
-    border-radius: 5px;
+    border-radius: 6px;
     text-decoration: none;
-    margin-left: 8px;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
+    font-size: 14px;
 }
 
-.btn:hover {
-    background: #2980b9;
-}
-
-.icon-btn {
-    padding: 7px 10px;
+.btn.history {
     background: #2ecc71;
-}
-
-.icon-btn.mail {
-    background: #e67e22;
-}
-
-.icon-btn:hover {
-    opacity: 0.9;
-}
-
-.heading {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 30px;
 }
 
 .back-btn {
     padding: 6px 15px;
     border-radius: 10px;
     cursor: pointer;
-}
-
-.back-btn:hover {
-    background-color: #eee;
+    border: none;
 }
 </style>
 
 <div class="table-box">
     <div class="heading">
         <h2>My Patients</h2>
-        <button type="button" class="back-btn" onclick="window.history.back();">
-            ← Back
-        </button>
+
+        <form method="get">
+            <input
+                type="text"
+                name="search"
+                class="search-input"
+                placeholder="Search by name or mobile"
+                value="{{ search }}"
+            >
+        </form>
+
+        <button class="back-btn" onclick="window.history.back()">← Back</button>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th>S.no</th>
+                <th>S.No</th>
                 <th>Patient Name</th>
                 <th>Age</th>
                 <th>Mobile</th>
                 <th>Actions</th>
             </tr>
         </thead>
+
         <tbody>
             {% for patient in patients %}
             <tr>
@@ -104,36 +97,10 @@ th {
                 <td>{{ patient.age }}</td>
                 <td>{{ patient.admin.username }}</td>
                 <td>
-
-                    <!-- Generate PDF -->
-                    {% comment %} <a href="{% url 'generate-prescription' patient.id %}"
-                    class="btn icon-btn"
-                    title="Generate Prescription PDF">
-                        <i class="fa-solid fa-file-pdf"></i>
-                    </a>
-
-                    <!-- Send Prescription to Mail -->
-                    <a href="{% url 'generate-prescription' patient.id %}"
-                    class="btn icon-btn mail"
-                    title="Send Prescription to Email">
-                        <i class="fa-solid fa-envelope"></i>
-                    </a> {% endcomment %}
-
-                    <!-- Create Payment -->
-                    <a href="{% url 'manage-payment' patient.id %}" class="btn">
-                        Payment
-                    </a>
-
-                    <!-- Payment History -->
-                    <a href="{% url 'payment-history' patient.id %}" class="btn">
-                        Payment History
-                    </a>
-                    <a href="{% url 'generate-prescription' patient.id %}" class="btn">
-                        Generate Prescription
-                    </a>
-                    <a href="{% url 'all-prescription' patient.id %}" class="btn">
-                        Prescription History
-                    </a>
+                    <a href="{% url 'create-meeting' patient.id %}" class="btn">Create Meeting</a>
+                    <a href="{% url 'visiting-history' patient.id %}" class="btn history">Visiting History</a>
+                    <a href="{% url 'payment-history' patient.id %}" class="btn">Payment History</a>
+                    <a href="{% url 'all-prescription' patient.id %}" class="btn history">All Prescription</a>
                 </td>
             </tr>
             {% empty %}
@@ -146,6 +113,3 @@ th {
 </div>
 
 {% endblock %}
-
-
-

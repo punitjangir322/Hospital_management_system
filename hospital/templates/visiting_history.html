@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Visiting History{% endblock %}
+
+{% block content %}
+
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+/>
+
+<style>
+.history-box{
+    background:#fff;
+    padding:20px;
+    border-radius:10px;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.back-btn{
+    padding:6px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    border:none;
+    background:#eee;
+}
+
+.back-btn:hover{
+    background:#ddd;
+}
+
+.patient-info{
+    background:#f8f9fa;
+    padding:15px;
+    border-radius:8px;
+    margin-bottom:20px;
+}
+
+.patient-info p{
+    margin:6px 0;
+    font-size:14px;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th, td{
+    padding:10px;
+    border:1px solid #ddd;
+    text-align:center;
+}
+
+th{
+    background:#2c3e50;
+    color:#fff;
+}
+
+.btn{
+    padding:6px 12px;
+    border-radius:6px;
+    text-decoration:none;
+    color:#fff;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+}
+
+.btn.prescription{
+    background:#3498db;
+}
+
+.btn.prescription:hover{
+    background:#2980b9;
+}
+
+.btn.payment{
+    background:#2ecc71;
+}
+
+.btn.payment:hover{
+    background:#27ae60;
+}
+</style>
+
+<div class="history-box">
+
+    <div class="header">
+        <h2>Visiting History</h2>
+        <button class="back-btn" onclick="window.history.back();">← Back</button>
+    </div>
+
+    <!-- ✅ Patient Details -->
+    <div class="patient-info">
+        <p><strong>Patient Name:</strong> {{ patient.name }}</p>
+        <p><strong>Age:</strong> {{ patient.age }}</p>
+        <p><strong>Gender:</strong> {{ patient.gender }}</p>
+        <p><strong>Mobile:</strong> {{ patient.admin.username }}</p>
+    </div>
+
+    <!-- ✅ Visiting History Table -->
+    <table>
+        <thead>
+            <tr>
+                <th>S.No</th>
+                <th>Visit Date</th>
+                <th>Reason</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for meeting in meetings %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ meeting.meeting_date }}</td>
+                <td>{{ meeting.reason }}</td>
+                <td>{{ meeting.description|default:"-" }}</td>
+                <td>
+
+                    <!-- Generate Prescription -->
+                    <a href="{% url 'generate-prescription' meeting.id %}"
+                    class="btn prescription">
+                        <i class="fa-solid fa-file-prescription"></i>
+                        Prescription
+                    </a>
+
+                    <!-- Create Payment -->
+                    <a href="{% url 'manage-payment' meeting.id %}"
+                    class="btn payment">
+                        <i class="fa-solid fa-credit-card"></i>
+                        Payment
+                    </a>
+
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No visiting history found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}

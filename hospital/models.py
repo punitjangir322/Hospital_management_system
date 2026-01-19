@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
+from django.utils import timezone
+
 
 class Hospital(models.Model):
     name = models.CharField(max_length=200)
@@ -69,8 +72,7 @@ class Patient(models.Model):
     )
 
 
-    disease = models.CharField(max_length=200)
-    admitted_on = models.DateTimeField(auto_now_add=True)
+    
     address=models.CharField(max_length=30)
     email = models.EmailField(null=True,blank=True)
     ward_no=models.CharField(max_length=10)
@@ -90,10 +92,67 @@ class Appointment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+
+
+
+from django.db import models
+
+
+
+class Meeting(models.Model):
+    hospital = models.ForeignKey(
+        Hospital,
+        on_delete=models.CASCADE,
+        related_name="meetings"
+    )
+    
+
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,
+        related_name="meetings"
+    )
+
+    patient = models.ForeignKey(
+        Patient,
+        on_delete=models.CASCADE,
+        related_name="meetings"
+    )
+
+    meeting_date = models.DateField()
+
+    reason = models.CharField(
+        max_length=255
+    )
+
+    description = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        default=timezone.now
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    
+    def __str__(self):
+        return f"{self.patient.name} - {self.meeting_date}"
+
+
 class Prescription(models.Model):
     hospital = models.ForeignKey('Hospital', on_delete=models.CASCADE,null=True,blank=True)
     doctor = models.ForeignKey('Doctor', on_delete=models.CASCADE,null=True,blank=True)
     patient = models.ForeignKey('Patient', on_delete=models.CASCADE,null=True,blank=True)
+    meeting = models.ForeignKey(
+        Meeting,
+        on_delete=models.CASCADE,
+        related_name="meetings",null=True,blank=True
+    )
+
 
     medicine_name = models.CharField(max_length=255,null=True,blank=True)
     quantity = models.PositiveIntegerField(null=True,blank=True)
@@ -104,48 +163,37 @@ class Prescription(models.Model):
 
     def __str__(self):
         return f"{self.patient.name} - {self.medicine_name}"
-
-
+    
 class Payment(models.Model):
-
-    PAYMENT_METHODS = (
-        ("Cash", "Cash"),
-        ("UPI", "UPI"),
-        ("Card", "Card"),
-        ("Net Banking", "Net Banking"),
+    hospital = models.ForeignKey(
+        Hospital,
+        on_delete=models.CASCADE,null=True,blank=True
+    )
+    doctor = models.ForeignKey(
+        Doctor,
+        on_delete=models.CASCADE,null=True,blank=True
     )
     patient = models.ForeignKey(
         Patient,
-        on_delete=models.CASCADE,
-        related_name="payments",null=True,blank=True
+        on_delete=models.CASCADE,null=True,blank=True
     )
-    total_payment = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
-
-    paid_payment = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
+    meeting = models.ForeignKey(
+        Meeting,
+        on_delete=models.CASCADE,null=True,blank=True
     )
 
-    remaining_payment = models.DecimalField(
-        max_digits=10,
-        decimal_places=2
-    )
+    total_payment = models.PositiveIntegerField()
+    paid_payment = models.PositiveIntegerField()
+    remaining_payment = models.PositiveIntegerField()
 
-    reason = models.CharField(
-        max_length=255
-    )
-
-    payment_method = models.CharField(
-        max_length=20,
-        choices=PAYMENT_METHODS
-    )
-
+    reason = models.CharField(max_length=255)
+    payment_method = models.CharField(max_length=50)
     payment_date = models.DateField()
 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Payment on {self.payment_date} - Remaining {self.remaining_payment}"
+        return f"{self.patient.name} - {self.payment_date}"
+
+    
+
