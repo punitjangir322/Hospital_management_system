@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from django.contrib.auth.models import User   # ✅ FIXED
-from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment,Meeting,AdmitPatient
+from .models import Hospital,Doctor,Patient,Appointment,Prescription,Payment,Meeting,AdmitPatient,MedicineBill,MedicineBillItem
 from django.contrib.auth.hashers import check_password
 from django.db import IntegrityError
 from django.core.mail import send_mail
@@ -10,6 +10,7 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from django.contrib import messages
 import logging
+from datetime import date
 import traceback
 from django.http import JsonResponse
 from django.db.models import Q
@@ -1250,3 +1251,212 @@ def edit_admitted(request,admit_id):
     return render(request,'edit admitted.html',{
         'admit':admit
     })
+
+
+def create_medicine_bill(request):
+    # ================= SESSION CHECK =================
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+    patient = None
+
+    # ================= SEARCH PATIENT =================
+    search = request.GET.get('search')
+    if search:
+        patient = Patient.objects.filter(
+            hospital=hospital
+        ).filter(
+            Q(name__icontains=search) |
+            Q(mobile__icontains=search)
+        ).first()
+
+        if not patient:
+            messages.error(request, "Patient not found in this hospital")
+
+    # ================= CREATE BILL =================
+    if request.method == "POST":
+        patient_id = request.POST.get('patient_id')
+        medicine_names = request.POST.getlist('medicine_name[]')
+        quantities = request.POST.getlist('quantity[]')
+        prices = request.POST.getlist('price[]')
+
+        patient = get_object_or_404(
+            Patient,
+            id=patient_id,
+            hospital=hospital
+        )
+
+        # ---------- CALCULATE TOTAL ----------
+        grand_total = 0
+        items = []
+
+        for name, qty, price in zip(medicine_names, quantities, prices):
+            if name and qty and price:
+                qty = int(qty)
+                price = float(price)
+                total = qty * price
+                grand_total += total
+                items.append((name, qty, price, total))
+
+        if not items:
+            messages.error(request, "Please add at least one medicine")
+            return redirect('create_medicine_bill')
+
+        # ---------- SAVE BILL ----------
+        bill = MedicineBill.objects.create(
+            hospital=hospital,
+            patient=patient,
+            doctor=patient.doctor,
+            grand_total=grand_total
+        )
+
+        for item in items:
+            MedicineBillItem.objects.create(
+                bill=bill,
+                medicine_name=item[0],
+                quantity=item[1],
+                price=item[2],
+                total=item[3]
+            )
+
+        # ================= PDF GENERATION =================
+        buffer = BytesIO()
+        pdf = canvas.Canvas(buffer, pagesize=A4)
+        width, height = A4
+
+        # ---------- HEADER ----------
+        pdf.setFillColor(colors.HexColor("#1976d2"))
+        pdf.rect(0, height - 90, width, 90, fill=1)
+
+        pdf.setFillColor(colors.white)
+        pdf.setFont("Helvetica-Bold", 20)
+        pdf.drawString(40, height - 50, hospital.name)
+
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(40, height - 70, hospital.address)
+        pdf.drawRightString(width - 40, height - 60, f"Date: {date.today()}")
+
+        # ---------- TITLE ----------
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 16)
+        pdf.drawCentredString(width / 2, height - 120, "MEDICINE BILL")
+
+        # ---------- PATIENT DETAILS ----------
+        y = height - 155
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(40, y, "Patient Name:")
+        pdf.drawString(300, y, "Doctor:")
+
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(130, y, patient.name)
+        pdf.drawString(360, y, patient.doctor.name)
+
+        y -= 18
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(40, y, "Mobile:")
+        pdf.drawString(300, y, "Bill No:")
+
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(130, y, patient.admin.username)
+        pdf.drawString(360, y, str(bill.id))
+
+        # ---------- TABLE HEADER ----------
+        y -= 35
+        pdf.setFillColor(colors.HexColor("#f2f4f7"))
+        pdf.rect(40, y, width - 80, 24, fill=1)
+
+        pdf.setFillColor(colors.black)
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(50, y + 8, "Medicine")
+        pdf.drawRightString(310, y + 8, "Qty")
+        pdf.drawRightString(380, y + 8, "Price")
+        pdf.drawRightString(460, y + 8, "Total")
+
+        # ---------- TABLE BODY ----------
+        y -= 20
+        pdf.setFont("Helvetica", 10)
+
+        for item in bill.items.all():
+            if y < 120:
+                pdf.showPage()
+                y = height - 100
+
+            pdf.drawString(50, y, item.medicine_name)
+            pdf.drawRightString(310, y, str(item.quantity))
+            pdf.drawRightString(380, y, f"₹ {item.price}")
+            pdf.drawRightString(460, y, f"₹ {item.total}")
+            y -= 16
+
+        # ---------- GRAND TOTAL ----------
+        y -= 10
+        pdf.line(300, y, 460, y)
+        y -= 22
+
+        pdf.setFont("Helvetica-Bold", 13)
+        pdf.drawRightString(380, y, "Grand Total:")
+        pdf.drawRightString(460, y, f"₹ {bill.grand_total}")
+
+        # ---------- FOOTER ----------
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(40, 80, "This is a computer generated bill.")
+        pdf.drawRightString(width - 40, 80, "Authorized Signature")
+        pdf.line(width - 180, 70, width - 40, 70)
+
+        pdf.showPage()
+        pdf.save()
+        buffer.seek(0)
+
+        # ================= EMAIL PDF (SAFE) =================
+        if patient.email and settings.EMAIL_HOST_USER:
+            try:
+                email = EmailMessage(
+                    subject="Your Medicine Bill",
+                    body="Please find attached your medicine bill.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    to=[patient.email],
+                )
+                email.attach(
+                    f"Medicine_Bill_{bill.id}.pdf",
+                    buffer.getvalue(),
+                    "application/pdf"
+                )
+                email.send(fail_silently=True)
+            except Exception as e:
+                print("Email error:", e)
+
+        # ================= AUTO DOWNLOAD =================
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type="application/pdf"
+        )
+        response['Content-Disposition'] = (
+            f'attachment; filename="Medicine_Bill_{bill.id}.pdf"'
+        )
+        return response
+
+    # ================= PAGE LOAD =================
+    return render(request, 'create medicine bill.html', {
+        'patient': patient,
+        'today': date.today(),
+    })
+
+def all_medicine_bill(request):
+    hospital_id = request.session.get('hospital_id')
+    if not hospital_id:
+        return redirect('hospital_login_page')
+
+    hospital = get_object_or_404(Hospital, id=hospital_id)
+    
+
+    
+    search = request.GET.get('search')
+    if search:
+        patient = Patient.objects.filter(
+            hospital=hospital
+        ).filter(
+            Q(name__icontains=search) |
+            Q(mobile__icontains=search)
+        ).first()
+    return render(request,'all medicine bill.html')

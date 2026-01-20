@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Create Medicine Bill{% endblock %}
+{% block content %}
+
+<style>
+    body {
+        background: #f2f4f7;
+        font-family: Arial, sans-serif;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 40px auto;
+        background: #fff;
+        padding: 25px;
+        border-radius: 10px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 25px;
+        color: #2c3e50;
+    }
+
+    .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+    }
+
+    .search-box input {
+        flex: 1;
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    .search-box button {
+        padding: 12px 20px;
+        background: #3498db;
+        border: none;
+        color: #fff;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    .patient-box {
+        background: #f8fafc;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        border-left: 4px solid #3498db;
+    }
+
+    .patient-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+
+    label {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        display: block;
+    }
+
+    input {
+        width: 100%;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+    }
+
+    input[readonly] {
+        background: #eee;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+        font-size: 13px;
+    }
+
+    th {
+        background: #f0f3f7;
+    }
+
+    .footer {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+        align-items: center;
+    }
+
+    .total-box {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .btn {
+        padding: 12px 18px;
+        border-radius: 6px;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        text-decoration: none;
+    }
+
+    .btn-pdf {
+        background: #27ae60;
+    }
+
+    .btn-back {
+        background: #7f8c8d;
+        margin-left:10  00px;
+    }
+</style>
+
+<div class="container">
+    <a href="{% url 'hospital_dashboard' %}" class="btn btn-back">Back</a>
+    <h2>Create Medicine Bill</h2>
+
+    <!-- 🔍 Search Patient -->
+    <form method="GET" class="search-box">
+        <input type="text" name="search" placeholder="Search patient by name or mobile"
+        value="{{ request.GET.search }}">
+        <button type="submit">Search</button>
+    </form>
+
+    {% if patient %}
+
+    <!-- 👤 Patient Details -->
+    <div class="patient-box">
+        <div class="patient-grid">
+            <div>
+                <label>Name</label>
+                <input type="text" value="{{ patient.name }}" readonly>
+            </div>
+            <div>
+                <label>Mobile</label>
+                <input type="text" value="{{ patient.admin.username }}" readonly>
+            </div>
+            <div>
+                <label>Age</label>
+                <input type="text" value="{{ patient.age }}" readonly>
+            </div>
+            <div>
+                <label>Doctor</label>
+                <input type="text" value="{{ patient.doctor.name }}" readonly>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💊 Medicine Form -->
+    <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="patient_id" value="{{ patient.id }}">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>S.no</th>
+                    <th>Medicine</th>
+                    <th>Qty</th>
+                    <th>Price (₹)</th>
+                    <th>Total (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for i in "12345678910"|make_list %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td><input type="text" name="medicine_name[]"></td>
+                    <td><input type="number" name="quantity[]" oninput="calculateTotals()"></td>
+                    <td><input type="number" name="price[]" oninput="calculateTotals()"></td>
+                    <td><input type="number" name="total[]" readonly></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="total-box">
+                Grand Total: ₹ <span id="grandTotal">0.00</span>
+            </div>
+
+            <div>
+                
+                <button type="submit" class="btn btn-pdf">Generate PDF</button>
+            </div>
+        </div>
+    </form>
+
+    {% else %}
+        <p style="text-align:center;color:#888;">
+            Search patient to create medicine bill
+        </p>
+    {% endif %}
+</div>
+
+<!-- ✅ CALCULATION SCRIPT -->
+<script>
+function calculateTotals() {
+    let grandTotal = 0;
+
+    document.querySelectorAll("tbody tr").forEach(row => {
+        const qty = row.querySelector('input[name="quantity[]"]').value || 0;
+        const price = row.querySelector('input[name="price[]"]').value || 0;
+        const totalField = row.querySelector('input[name="total[]"]');
+
+        const rowTotal = qty * price;
+        totalField.value = rowTotal.toFixed(2);
+        grandTotal += rowTotal;
+    });
+
+    document.getElementById("grandTotal").innerText = grandTotal.toFixed(2);
+}
+</script>
+
+{% endblock %}

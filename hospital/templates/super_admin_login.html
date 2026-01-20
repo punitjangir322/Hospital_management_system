@@ -2,10 +2,20 @@
 
 {% block content %}
 <style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
     .login-box {
-        width: 400px;
+        width: 100%;
+        max-width: 400px;
         margin: 80px auto;
-        background: white;
+        background: #ffffff;
         padding: 30px;
         border-radius: 10px;
         box-shadow: 0 0 15px rgba(0,0,0,0.1);
@@ -15,29 +25,32 @@
         text-align: center;
         margin-bottom: 25px;
         color: #2a5298;
+        font-size: 24px;
     }
 
     .login-box label {
         font-weight: bold;
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 6px;
+        font-size: 14px;
     }
 
     .login-box input {
         width: 100%;
         padding: 10px;
         margin-bottom: 15px;
-        border-radius: 5px;
+        border-radius: 6px;
         border: 1px solid #ccc;
+        font-size: 14px;
     }
 
     .login-box button {
         width: 100%;
         background: #2a5298;
         color: white;
-        padding: 10px;
+        padding: 12px;
         border: none;
-        border-radius: 5px;
+        border-radius: 6px;
         font-size: 16px;
         cursor: pointer;
         transition: 0.3s;
@@ -50,47 +63,35 @@
     .error {
         color: red;
         text-align: center;
-        margin-bottom: 10px;
-    }
-    /* ===== MOBILE RESPONSIVE (≤ 400px) ===== */
-@media (max-width: 400px) {
-
-
-
-    
-    
-    .login-box {
-        width: 90%;
-        margin: 40px auto;
-        padding: 20px;
-        border-radius: 8px;
-        
-    }
-
-    .login-box h2 {
-        font-size: 20px;
-        margin-bottom: 20px;
-    }
-
-    .login-box label {
+        margin-bottom: 12px;
         font-size: 14px;
     }
 
-    .login-box input {
-        padding: 9px;
-        font-size: 14px;
-    }
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 480px) {
 
-    .login-box button {
-        padding: 10px;
-        font-size: 15px;
-    }
+        .login-box {
+            width:100%;
+            margin: 40px 10px;
+            padding: 20px;
+            border-radius: 8px;
+        }
 
-    .error {
-        font-size: 13px;
-    }
-}
+        .login-box h2 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
 
+        .login-box input {
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        .login-box button {
+            padding: 12px;
+            font-size: 15px;
+        }
+    }
 </style>
 
 <div class="login-box">
@@ -104,10 +105,10 @@
         {% csrf_token %}
 
         <label>Username</label>
-        <input type="text" name="username" required>
+        <input type="text" name="username" placeholder="Enter username" required>
 
         <label>Password</label>
-        <input type="password" name="password" required>
+        <input type="password" name="password" placeholder="Enter password" required>
 
         <button type="submit">Login</button>
     </form>
